@@ -1,0 +1,856 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NoteMD - Modern Note Taking</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .app-container {
+            display: flex;
+            min-height: 100vh;
+            max-width: 1400px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 0 0 20px 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        .sidebar {
+            width: 300px;
+            background: rgba(255, 255, 255, 0.9);
+            border-right: 1px solid rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            border-radius: 20px 0 0 20px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            background: linear-gradient(45deg, #1e3c72, #2a5298);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header-buttons {
+            display: flex;
+            gap: 10px;
+            flex-direction: column;
+        }
+
+        .new-note-btn {
+            background: linear-gradient(45deg, #1e3c72, #2a5298);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(30, 60, 114, 0.4);
+        }
+
+        .new-note-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(30, 60, 114, 0.6);
+        }
+
+        .settings-btn {
+            background: linear-gradient(45deg, #666, #888);
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s ease;
+        }
+
+        .settings-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(102, 102, 102, 0.4);
+        }
+
+        .settings-modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+
+        .settings-content {
+            background-color: white;
+            margin: 15% auto;
+            padding: 30px;
+            border-radius: 20px;
+            width: 400px;
+            max-width: 90%;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .settings-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .settings-title {
+            font-size: 20px;
+            font-weight: bold;
+            color: #1e3c72;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #666;
+        }
+
+        .setting-item {
+            margin-bottom: 20px;
+        }
+
+        .setting-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .language-select {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-size: 14px;
+            background: white;
+        }
+
+        .language-select:focus {
+            outline: none;
+            border-color: #1e3c72;
+        }
+
+        .notes-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .note-item {
+            background: white;
+            padding: 15px;
+            border-radius: 12px;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        .note-item:hover {
+            transform: translateX(5px);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .note-item.active {
+            border-color: #1e3c72;
+            background: linear-gradient(45deg, rgba(30, 60, 114, 0.1), rgba(42, 82, 152, 0.1));
+        }
+
+        .note-title {
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: #333;
+        }
+
+        .note-preview {
+            font-size: 12px;
+            color: #666;
+            opacity: 0.8;
+        }
+
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .editor-header {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 20px;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .note-title-input {
+            border: none;
+            background: transparent;
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+            outline: none;
+            flex: 1;
+            margin-right: 20px;
+        }
+
+        .view-toggle {
+            display: flex;
+            background: rgba(30, 60, 114, 0.1);
+            border-radius: 25px;
+            padding: 4px;
+        }
+
+        .view-btn {
+            background: transparent;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            color: #1e3c72;
+        }
+
+        .view-btn.active {
+            background: linear-gradient(45deg, #1e3c72, #2a5298);
+            color: white;
+        }
+
+        .editor-container {
+            flex: 1;
+            display: flex;
+            position: relative;
+        }
+
+        .editor-pane {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .editor-textarea {
+            flex: 1;
+            border: none;
+            padding: 30px;
+            font-family: 'Courier New', monospace;
+            font-size: 16px;
+            line-height: 1.6;
+            outline: none;
+            resize: none;
+            background: rgba(255, 255, 255, 0.9);
+            color: #333;
+        }
+
+        .preview-pane {
+            flex: 1;
+            padding: 30px;
+            background: white;
+            border-left: 1px solid rgba(0, 0, 0, 0.1);
+            overflow-y: auto;
+        }
+
+        .preview-content {
+            line-height: 1.6;
+            color: #333;
+        }
+
+        .preview-content h1 {
+            color: #1e3c72;
+            margin-bottom: 20px;
+            font-size: 2em;
+        }
+
+        .preview-content h2 {
+            color: #2a5298;
+            margin: 20px 0 15px 0;
+            font-size: 1.5em;
+        }
+
+        .preview-content h3 {
+            color: #1e3c72;
+            margin: 15px 0 10px 0;
+            font-size: 1.2em;
+        }
+
+        .preview-content p {
+            margin-bottom: 15px;
+        }
+
+        .preview-content ul, .preview-content ol {
+            margin-left: 20px;
+            margin-bottom: 15px;
+        }
+
+        .preview-content code {
+            background: rgba(30, 60, 114, 0.1);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .preview-content pre {
+            background: rgba(30, 60, 114, 0.1);
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin-bottom: 15px;
+        }
+
+        .preview-content blockquote {
+            border-left: 4px solid #1e3c72;
+            padding-left: 20px;
+            margin: 15px 0;
+            color: #666;
+            font-style: italic;
+        }
+
+        .delete-btn {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a52);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s ease;
+        }
+
+        .delete-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(255, 107, 107, 0.4);
+        }
+
+        .welcome-message {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            text-align: center;
+            color: #666;
+            padding: 40px;
+        }
+
+        .welcome-message h2 {
+            color: #1e3c72;
+            margin-bottom: 15px;
+            font-size: 2.5em;
+            font-weight: 300;
+        }
+
+        .welcome-message p {
+            font-size: 1.2em;
+            opacity: 0.8;
+            max-width: 400px;
+            line-height: 1.6;
+        }
+
+        @media (max-width: 768px) {
+            .app-container {
+                flex-direction: column;
+                border-radius: 0;
+            }
+            
+            .sidebar {
+                width: 100%;
+                border-radius: 0;
+                border-right: none;
+                border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+            }
+            
+            .editor-container {
+                flex-direction: column;
+            }
+            
+            .preview-pane {
+                border-left: none;
+                border-top: 1px solid rgba(0, 0, 0, 0.1);
+            }
+
+            .welcome-message h2 {
+                font-size: 2em;
+            }
+
+            .welcome-message p {
+                font-size: 1em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <div class="sidebar">
+            <div class="header">
+                <div class="logo">NoteMD</div>
+                <div class="header-buttons">
+                    <button class="new-note-btn" onclick="createNewNote()" data-en="+ New Note" data-de="+ Neue Notiz">+ New Note</button>
+                    <button class="new-note-btn" onclick="importMarkdownFile()" style="font-size: 12px; padding: 8px 12px;" data-en="Import .md" data-de="Importieren .md">Import .md</button>
+                    <button class="new-note-btn" onclick="exportAllNotes()" style="font-size: 12px; padding: 8px 12px;" data-en="Export All" data-de="Alle Exportieren">Export All</button>
+                    <button class="settings-btn" onclick="openSettings()" data-en="Settings" data-de="Einstellungen">Settings</button>
+                </div>
+            </div>
+            <div class="notes-list" id="notesList">
+                <!-- Notes will be dynamically added here -->
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="editor-header">
+                <input type="text" class="note-title-input" id="noteTitleInput" placeholder="Untitled Note" onchange="updateNoteTitle()">
+                <div class="view-toggle">
+                    <button class="view-btn active" onclick="setView('split')" data-en="Split" data-de="Teilen">Split</button>
+                    <button class="view-btn" onclick="setView('edit')" data-en="Edit" data-de="Bearbeiten">Edit</button>
+                    <button class="view-btn" onclick="setView('preview')" data-en="Preview" data-de="Vorschau">Preview</button>
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <button class="new-note-btn" onclick="saveCurrentNoteAsFile()" style="font-size: 12px; padding: 8px 12px;" data-en="Save .md" data-de="Speichern .md">Save .md</button>
+                    <button class="delete-btn" onclick="deleteCurrentNote()" data-en="Delete" data-de="Löschen">Delete</button>
+                </div>
+            </div>
+
+            <div class="editor-container" id="editorContainer">
+                <div class="welcome-message" id="welcomeMessage">
+                    <h2 data-en="Welcome to NoteMD" data-de="Willkommen bei NoteMD">Welcome to NoteMD</h2>
+                    <p data-en="Create your first note to get started with markdown editing!" data-de="Erstellen Sie Ihre erste Notiz, um mit der Markdown-Bearbeitung zu beginnen!">Create your first note to get started with markdown editing!</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settingsModal" class="settings-modal">
+        <div class="settings-content">
+            <div class="settings-header">
+                <h2 class="settings-title" data-en="Settings" data-de="Einstellungen">Settings</h2>
+                <button class="close-btn" onclick="closeSettings()">&times;</button>
+            </div>
+            <div class="setting-item">
+                <label class="setting-label" data-en="Language" data-de="Sprache">Language</label>
+                <select class="language-select" id="languageSelect" onchange="changeLanguage()">
+                    <option value="en">English</option>
+                    <option value="de">Deutsch</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let notes = [];
+        let currentNoteId = null;
+        let currentView = 'split';
+        let currentLanguage = 'en';
+
+        // Language translations
+        const translations = {
+            en: {
+                placeholders: {
+                    noteTitle: "Untitled Note",
+                    editorText: "Start writing in Markdown...",
+                    selectNote: "Select a note to edit",
+                    selectNoteDesc: "Choose a note from the sidebar or create a new one!"
+                },
+                alerts: {
+                    noNotesToExport: "No notes to export!",
+                    selectNoteToSave: "Please select a note to save!",
+                    confirmDelete: "Are you sure you want to delete this note?"
+                }
+            },
+            de: {
+                placeholders: {
+                    noteTitle: "Unbenannte Notiz",
+                    editorText: "Beginnen Sie hier mit dem Schreiben in Markdown...",
+                    selectNote: "Wählen Sie eine Notiz zum Bearbeiten",
+                    selectNoteDesc: "Wählen Sie eine Notiz aus der Seitenleiste oder erstellen Sie eine neue!"
+                },
+                alerts: {
+                    noNotesToExport: "Keine Notizen zum Exportieren!",
+                    selectNoteToSave: "Bitte wählen Sie eine Notiz zum Speichern!",
+                    confirmDelete: "Sind Sie sicher, dass Sie diese Notiz löschen möchten?"
+                }
+            }
+        };
+
+        // Initialize the app
+        function init() {
+            loadNotes();
+            renderNotesList();
+            loadSettings();
+        }
+
+        // Load settings
+        function loadSettings() {
+            const savedLanguage = localStorage.getItem('notemd-language') || 'en';
+            currentLanguage = savedLanguage;
+            document.getElementById('languageSelect').value = savedLanguage;
+            updateLanguage();
+        }
+
+        // Save settings
+        function saveSettings() {
+            localStorage.setItem('notemd-language', currentLanguage);
+        }
+
+        // Open settings modal
+        function openSettings() {
+            document.getElementById('settingsModal').style.display = 'block';
+        }
+
+        // Close settings modal
+        function closeSettings() {
+            document.getElementById('settingsModal').style.display = 'none';
+        }
+
+        // Change language
+        function changeLanguage() {
+            const select = document.getElementById('languageSelect');
+            currentLanguage = select.value;
+            updateLanguage();
+            saveSettings();
+        }
+
+        // Update language
+        function updateLanguage() {
+            const elements = document.querySelectorAll('[data-en]');
+            elements.forEach(element => {
+                if (element.hasAttribute(`data-${currentLanguage}`)) {
+                    element.textContent = element.getAttribute(`data-${currentLanguage}`);
+                }
+            });
+
+            // Update placeholders
+            const titleInput = document.getElementById('noteTitleInput');
+            if (titleInput) {
+                titleInput.placeholder = translations[currentLanguage].placeholders.noteTitle;
+            }
+
+            const editorTextarea = document.getElementById('editorTextarea');
+            if (editorTextarea) {
+                editorTextarea.placeholder = translations[currentLanguage].placeholders.editorText;
+            }
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('settingsModal');
+            if (event.target === modal) {
+                closeSettings();
+            }
+        }
+
+        // Load notes from uploaded files or initialize with sample data
+        function loadNotes() {
+            // Start with a sample note
+            notes = [
+                {
+                    id: 1,
+                    title: "Welcome to NoteMD",
+                    content: "# Welcome to NoteMD\n\nThis is your first note! You can write in **Markdown** format.\n\n## Features\n- Create new notes\n- Edit in Markdown\n- Live preview\n- Modern interface\n- Download notes as .md files\n- Multi-language support\n\n### Markdown Examples\n\n**Bold text** and *italic text*\n\n```javascript\nconsole.log('Hello, World!');\n```\n\n> This is a blockquote\n\n### Lists\n1. First item\n2. Second item\n3. Third item\n\n- Bullet point\n- Another point\n\nEnjoy taking notes!"
+                }
+            ];
+        }
+
+        // Save individual note as .md file
+        function saveNoteAsFile(note) {
+            const content = `# ${note.title}\n\n${note.content}`;
+            const blob = new Blob([content], { type: 'text/markdown' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${note.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.md`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        // Save all notes as separate .md files
+        function saveNotes() {
+            // Auto-save current note when changes are made
+            if (currentNoteId) {
+                const note = notes.find(n => n.id === currentNoteId);
+                if (note) {
+                    // For demonstration, we'll just log that we would save
+                    console.log(`Would save: ${note.title}.md`);
+                }
+            }
+        }
+
+        // Export all notes as .md files
+        function exportAllNotes() {
+            if (notes.length === 0) {
+                alert(translations[currentLanguage].alerts.noNotesToExport);
+                return;
+            }
+            
+            notes.forEach(note => {
+                setTimeout(() => saveNoteAsFile(note), 100 * note.id); // Stagger downloads
+            });
+        }
+
+        // Import .md file
+        function importMarkdownFile() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.md,.markdown,.txt';
+            input.multiple = true;
+            
+            input.onchange = (e) => {
+                const files = e.target.files;
+                for (let file of files) {
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                        const content = event.target.result;
+                        const title = file.name.replace(/\.(md|markdown|txt)$/, '');
+                        
+                        const newNote = {
+                            id: Date.now() + Math.random(),
+                            title: title,
+                            content: content
+                        };
+                        
+                        notes.unshift(newNote);
+                        renderNotesList();
+                    };
+                    reader.readAsText(file);
+                }
+            };
+            
+            input.click();
+        }
+
+        // Create a new note
+        function createNewNote() {
+            const newNote = {
+                id: Date.now(),
+                title: currentLanguage === 'de' ? "Neue Notiz" : "New Note",
+                content: currentLanguage === 'de' ? "# Neue Notiz\n\nHier schreiben beginnen..." : "# New Note\n\nStart writing here..."
+            };
+            notes.unshift(newNote);
+            saveNotes();
+            renderNotesList();
+            selectNote(newNote.id);
+        }
+
+        // Render the notes list
+        function renderNotesList() {
+            const notesList = document.getElementById('notesList');
+            notesList.innerHTML = '';
+
+            notes.forEach(note => {
+                const noteItem = document.createElement('div');
+                noteItem.className = `note-item ${note.id === currentNoteId ? 'active' : ''}`;
+                noteItem.onclick = () => selectNote(note.id);
+
+                const preview = note.content.replace(/[#*`>-]/g, '').substring(0, 50) + '...';
+                
+                noteItem.innerHTML = `
+                    <div class="note-title">${note.title}</div>
+                    <div class="note-preview">${preview}</div>
+                `;
+
+                notesList.appendChild(noteItem);
+            });
+        }
+
+        // Select a note
+        function selectNote(noteId) {
+            currentNoteId = noteId;
+            const note = notes.find(n => n.id === noteId);
+            
+            if (note) {
+                document.getElementById('noteTitleInput').value = note.title;
+                showEditor();
+                updateEditorContent(note.content);
+                renderNotesList();
+            }
+        }
+
+        // Show the editor
+        function showEditor() {
+            const container = document.getElementById('editorContainer');
+            const welcomeMessage = document.getElementById('welcomeMessage');
+            
+            if (welcomeMessage) {
+                welcomeMessage.remove();
+            }
+
+            container.innerHTML = `
+                <div class="editor-pane" id="editorPane">
+                    <textarea class="editor-textarea" id="editorTextarea" placeholder="${translations[currentLanguage].placeholders.editorText}" oninput="updatePreview()"></textarea>
+                </div>
+                <div class="preview-pane" id="previewPane">
+                    <div class="preview-content" id="previewContent"></div>
+                </div>
+            `;
+
+            setView(currentView);
+        }
+
+        // Update editor content
+        function updateEditorContent(content) {
+            const textarea = document.getElementById('editorTextarea');
+            if (textarea) {
+                textarea.value = content;
+                updatePreview();
+            }
+        }
+
+        // Update preview and save note
+        function updatePreview() {
+            const textarea = document.getElementById('editorTextarea');
+            const preview = document.getElementById('previewContent');
+            
+            if (textarea && preview) {
+                const content = textarea.value;
+                preview.innerHTML = markdownToHtml(content);
+                
+                // Update the note in memory and save
+                if (currentNoteId) {
+                    const note = notes.find(n => n.id === currentNoteId);
+                    if (note) {
+                        note.content = content;
+                        saveNotes();
+                        renderNotesList(); // Update preview in sidebar
+                    }
+                }
+            }
+        }
+
+        // Simple markdown to HTML converter
+        function markdownToHtml(markdown) {
+            return markdown
+                .replace(/^# (.*$)/gm, '<h1>$1</h1>')
+                .replace(/^## (.*$)/gm, '<h2>$1</h2>')
+                .replace(/^### (.*$)/gm, '<h3>$1</h3>')
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                .replace(/`(.*?)`/g, '<code>$1</code>')
+                .replace(/^> (.*$)/gm, '<blockquote>$1</blockquote>')
+                .replace(/^- (.*$)/gm, '<ul><li>$1</li></ul>')
+                .replace(/^\d+\. (.*$)/gm, '<ol><li>$1</li></ol>')
+                .replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>')
+                .replace(/\n\n/g, '</p><p>')
+                .replace(/^(.+)$/gm, '<p>$1</p>')
+                .replace(/<\/p><p><h/g, '</p><h')
+                .replace(/h[1-6]><\/p>/g, function(match) {
+                    return match.replace(/<\/p>/, '');
+                })
+                .replace(/<p><\/p>/g, '')
+                .replace(/<\/ul>\s*<ul>/g, '')
+                .replace(/<\/ol>\s*<ol>/g, '');
+        }
+
+        // Update note title
+        function updateNoteTitle() {
+            const titleInput = document.getElementById('noteTitleInput');
+            if (currentNoteId && titleInput) {
+                const note = notes.find(n => n.id === currentNoteId);
+                if (note) {
+                    note.title = titleInput.value || translations[currentLanguage].placeholders.noteTitle;
+                    saveNotes();
+                    renderNotesList();
+                }
+            }
+        }
+
+        // Save current note as .md file
+        function saveCurrentNoteAsFile() {
+            if (currentNoteId) {
+                const note = notes.find(n => n.id === currentNoteId);
+                if (note) {
+                    saveNoteAsFile(note);
+                }
+            } else {
+                alert(translations[currentLanguage].alerts.selectNoteToSave);
+            }
+        }
+
+        // Delete current note
+        function deleteCurrentNote() {
+            if (currentNoteId && confirm(translations[currentLanguage].alerts.confirmDelete)) {
+                notes = notes.filter(n => n.id !== currentNoteId);
+                saveNotes();
+                currentNoteId = null;
+                renderNotesList();
+                
+                const container = document.getElementById('editorContainer');
+                container.innerHTML = `
+                    <div class="welcome-message">
+                        <h2>${translations[currentLanguage].placeholders.selectNote}</h2>
+                        <p>${translations[currentLanguage].placeholders.selectNoteDesc}</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Set view mode
+        function setView(view) {
+            currentView = view;
+            const editorPane = document.getElementById('editorPane');
+            const previewPane = document.getElementById('previewPane');
+            const buttons = document.querySelectorAll('.view-btn');
+            
+            buttons.forEach(btn => btn.classList.remove('active'));
+            document.querySelector(`[onclick="setView('${view}')"]`).classList.add('active');
+            
+            if (editorPane && previewPane) {
+                switch(view) {
+                    case 'edit':
+                        editorPane.style.display = 'flex';
+                        previewPane.style.display = 'none';
+                        break;
+                    case 'preview':
+                        editorPane.style.display = 'none';
+                        previewPane.style.display = 'block';
+                        break;
+                    case 'split':
+                    default:
+                        editorPane.style.display = 'flex';
+                        previewPane.style.display = 'block';
+                        break;
+                }
+            }
+        }
+
+        // Initialize the app when the page loads
+        window.onload = init;
+    </script>
+</body>
+</html>
